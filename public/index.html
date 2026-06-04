@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DESIGN STUDIO — виртуальный дизайнер интерьера</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="ms_header">
+    <div class="ms_logo">
+      <img src="logo.svg" alt="Castelia" class="ms_logo_img" id="logoImg"
+           onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex';">
+      <div class="ms_logo_fallback" id="logoFallback" style="display:none;">
+        <span class="ms_logo_orb"></span>
+        <div class="ms_logo_txt">
+          <div class="ms_logo_title">CASTELIA</div>
+          <div class="ms_logo_sub">Виртуальный дизайнер</div>
+        </div>
+      </div>
+    </div>
+    <button class="ms_btn ms_btn_ghost" id="newPhotoBtn">← Новое фото</button>
+  </header>
+
+  <main class="ms_hero">
+
+    <!-- Top: pretitle, title, lede -->
+    <div class="ms_hero_top">
+      <div class="ms_hero_pretitle">
+        <span class="ms_hero_dot"></span>
+        <span>Виртуальный дизайнер Castelia</span>
+      </div>
+      <h1 class="ms_hero_title">
+        Создай дизайн<br>
+        <span class="ms_gradient">за 1 минуту</span>
+      </h1>
+      <p class="ms_hero_lede" id="heroLede">
+        Загрузите фото, выберите до 3 материалов и кистью отметьте куда их наложить.
+        Наш сервис учтёт перспективу, свет и реальные границы стен — как опытный дизайнер.
+      </p>
+    </div>
+
+    <!-- Stage FIRST (upload / canvas / loader / result) -->
+    <div class="ms_stage" id="stage">
+
+      <div class="ms_drop" id="dropZone">
+        <div class="ms_drop_icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 16V4M12 4l-5 5M12 4l5 5"/>
+            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+          </svg>
+        </div>
+        <div class="ms_drop_title">Загрузите фото</div>
+        <div class="ms_drop_sub">Перетащите файл сюда или нажмите для выбора</div>
+        <div class="ms_drop_actions">
+          <button class="ms_btn ms_btn_gold" id="pickFileBtn">Выбрать файл</button>
+          <button class="ms_btn ms_btn_ghost" id="pickCamBtn">📷 Камера</button>
+        </div>
+        <div class="ms_drop_hint">JPG · PNG · HEIC · до 15 МБ</div>
+        <input type="file" id="fileInput" accept="image/*,.heic,.heif" style="display:none">
+        <input type="file" id="camInput" accept="image/*,.heic,.heif" capture="environment" style="display:none">
+      </div>
+
+      <div class="ms_canvas_stack" id="canvasStack" hidden>
+        <canvas id="baseCanvas"></canvas>
+        <canvas id="maskCanvas1" class="ms_mask_canvas"></canvas>
+        <canvas id="maskCanvas2" class="ms_mask_canvas"></canvas>
+        <canvas id="maskCanvas3" class="ms_mask_canvas"></canvas>
+      </div>
+
+      <div class="ms_loading" id="loadingOverlay" hidden>
+        <div class="ms_loader_orb"></div>
+        <div class="ms_progress"><div class="ms_progress_bar" id="progressBar"></div></div>
+        <div class="ms_loader_stage" id="loaderStage">Анализ фото</div>
+        <div class="ms_loader_hint">Готовим визуализацию · обычно 30–90 сек</div>
+        <div class="ms_tip">
+          <div class="ms_tip_label">А вы знали?</div>
+          <div class="ms_tip_text" id="loaderTipText">...</div>
+        </div>
+      </div>
+
+      <div class="ms_result" id="resultArea" hidden>
+        <div class="ms_result_view">
+          <img id="resultImage" alt="Результат">
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Slots row BELOW the stage -->
+    <div class="ms_slots" id="slotsRow"></div>
+
+    <!-- Tools row -->
+    <div class="ms_tools" id="toolsRow">
+      <div class="ms_tool_group">
+        <span class="ms_tool_label">Размер</span>
+        <input type="range" id="brushSize" min="8" max="100" value="35" class="ms_slider" disabled>
+        <span class="ms_brush_preview" id="brushPreview"></span>
+      </div>
+      <div class="ms_tool_group">
+        <button class="ms_tool_btn" id="toolBrush" data-active="true" title="Кисть" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3L17.7 9.3M3 21l4.5-1.5L18.5 8.5a2 2 0 0 0 0-2.8L19 5l-3-3-1 0.5a2 2 0 0 0-2.8 0L1.5 13.5 3 21z"/></svg>
+          <span>Кисть</span>
+        </button>
+        <button class="ms_tool_btn" id="toolEraser" title="Ластик" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6 6h12M14 14l8 8M20 20H8L2 14l9-9 10 10z"/></svg>
+          <span>Ластик</span>
+        </button>
+        <button class="ms_tool_btn" id="toolUndo" title="Отменить" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+        </button>
+        <button class="ms_tool_btn" id="toolClear" title="Очистить слой" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>
+      <button class="ms_btn ms_btn_ghost ms_designer_btn" id="designerBtn" disabled title="Дизайнер сам решит где разместить материалы">
+        <span>🪄 Дизайнер сам разместит</span>
+      </button>
+      <button class="ms_btn ms_btn_gold ms_generate" id="generateBtn" disabled>
+        <span>✦ Сгенерировать</span>
+      </button>
+    </div>
+
+    <div class="ms_result_actions" id="resultActions" hidden>
+      <button class="ms_btn ms_btn_ghost" id="touchupBtn">🖌 Подправить</button>
+      <button class="ms_btn ms_btn_gold" id="downloadBtn">⬇ Скачать PNG</button>
+    </div>
+
+  </main>
+
+  <!-- Material picker modal -->
+  <div class="ms_picker" id="materialPicker" hidden>
+    <div class="ms_picker_inner">
+      <div class="ms_picker_head">
+        <div>
+          <div class="ms_picker_eyebrow" id="pickerEyebrow">СЛОЙ 1</div>
+          <h4 id="pickerTitle">Выберите материал</h4>
+        </div>
+        <button class="ms_picker_close" id="pickerClose">×</button>
+      </div>
+      <div class="ms_picker_grid" id="pickerGrid"></div>
+    </div>
+  </div>
+
+  <div class="ms_toast" id="errorToast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
